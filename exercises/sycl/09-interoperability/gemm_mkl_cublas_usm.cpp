@@ -16,6 +16,19 @@
 // Add -DACPP if cublas and Adaptive Cpp is used for compiling
 // Add -DDPCPP -DCUDA_NO_HALF if oneapi is used for compiling
 
+// USe one of the option below
+// ************************************************************************************************************************************************************
+
+// icpx -std=c++17 -fuse-ld=lld -isystem $CUDA_HOME/include/  -DCUBLAS -DDPCPP -std=c++17 -O3 -fsycl -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend=nvptx64-nvidia-cuda --cuda-gpu-arch=sm_80  -L$CUDA_HOME/lib64/ -lcublas -lcudart -lcuda
+
+// /projappl/project_2008874/AdaptiveCpp/bin/acpp -fuse-ld=lld -O3 -DCUBLAS -DACPP -I$CUDA_HOME/include/ -L$CUDA_HOME/lib64/ -lcublas -lcudart -lcuda
+
+// icpx -std=c++17 -fuse-ld=lld -O3 -fsycl -fsycl-targets=spir64_x86_64 -I$MKLROOT/include  -L$MKLROOT/lib/intel64/  -lmkl_sycl -lmkl_core  -lmkl_sequential -lmkl_intel_ilp64   -DMKL_LIB gemm_mkl_cublas_usm.cpp 
+
+// ************************************************************************************************************************************************************
+//
+// If uyou are lucky you make this https://github.com/oneapi-src/oneMKL work
+//
 
 #include <sycl/sycl.hpp>
 #include <ctime>
@@ -187,7 +200,7 @@ q.submit([&](handler &cgh) {
        // Call generalised matrix-matrix multiply
        // Call generalised matrix-matrix multiply
        CHECK_ERROR(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N,N,
-                               N, &alpha, dev_a, N, dev_b, N, &beta,
+                               N, &alpha, dev_b, N, dev_a, N, &beta,
                                dev_c, N));
      });
    }).wait();
@@ -204,7 +217,7 @@ q.submit([&](handler &cgh) {
 
        // Call generalised matrix-matrix multiply
        CHECK_ERROR(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, N,N,
-                               N, &alpha, dev_a, N, dev_b, N, &beta,
+                               N, &alpha, dev_b, N, dev_a, N, &beta,
                                dev_c, N));
        cuStreamSynchronize(cuStream);
      });
@@ -213,9 +226,9 @@ q.submit([&](handler &cgh) {
 
 #endif
   
-    auto duration = std::chrono::high_resolution_clock::now() - start;
-    double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(duration).count();
-    std::cout << "\n Execute in " << elapsed_seconds << " s\n";
+    //auto duration = std::chrono::high_resolution_clock::now() - start;
+    //double elapsed_seconds = std::chrono::duration_cast<std::chrono::duration<double>>(duration).count();
+    //std::cout << "\n Execute in " << elapsed_seconds << " s\n";
 
     q.memcpy(matrix_c.data(), dev_c, N*N*sizeof(float)).wait();
     //# Print Output
